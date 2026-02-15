@@ -1,0 +1,548 @@
+openapi: 3.0.1
+info:
+  title: Irys Mobile Client API
+  version: 1.0.0
+
+servers:
+  - url: https://irysteams.com
+
+paths:
+
+  /api/mobile/client/login:
+    post:
+      tags: [Auth]
+      summary: Authenticate user
+      operationId: Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+
+  /api/mobile/client/logout:
+    post:
+      tags: [Auth]
+      summary: Logout current user
+      operationId: Logout
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BaseAppRequest'
+      responses:
+        '200':
+          description: Logout successful
+
+  /api/mobile/client/signup:
+    post:
+      tags: [Auth]
+      summary: Register new account
+      operationId: Signup
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignupRequest'
+      responses:
+        '200':
+          description: Signup initiated
+
+  /api/mobile/client/signup/email/confirmcode:
+    post:
+      tags: [Auth]
+      summary: Confirm signup email
+      operationId: ConfirmSignupCode
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignupEmailConfirmRequest'
+      responses:
+        '200':
+          description: Email confirmed
+
+  /api/mobile/client/me:
+    get:
+      tags: [User]
+      summary: Get authenticated user profile
+      operationId: GetMe
+      parameters:
+        - name: If-None-Match
+          in: header
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '304':
+          description: Not Modified
+
+  /api/mobile/client/org/details:
+    get:
+      tags: [Organization]
+      summary: Get organization details
+      operationId: GetOrgDetails
+      parameters:
+        - name: If-None-Match
+          in: header
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Organization metadata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrgDetails'
+        '304':
+          description: Not Modified
+
+  /api/mobile/client/updatedevice:
+    post:
+      tags: [Device]
+      summary: Register/update device
+      operationId: UpdateDevice
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateDeviceRequest'
+      responses:
+        '200':
+          description: Device updated
+
+  /api/mobile/client/flags:
+    post:
+      tags: [Flags]
+      summary: Create new flag
+      operationId: CreateFlag
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - category_id
+                - description
+                - latitude
+                - longitude
+                - image
+              properties:
+                category_id:
+                  type: integer
+                description:
+                  type: string
+                latitude:
+                  type: number
+                  format: double
+                  minimum: -90
+                  maximum: 90
+                longitude:
+                  type: number
+                  format: double
+                  minimum: -180
+                  maximum: 180
+                image:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Flag created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Flag'
+
+  /api/mobile/client/flags/search:
+    post:
+      tags: [Flags]
+      summary: Search flags
+      operationId: SearchFlags
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FlagsSearchRequest'
+      responses:
+        '200':
+          description: Flags
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Flag'
+
+  /api/mobile/client/flags/like:
+    post:
+      tags: [Flags]
+      summary: Like flag
+      operationId: LikeFlag
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LikeFlagRequest'
+      responses:
+        '200':
+          description: Like recorded
+
+  /api/mobile/client/flags/categories:
+    get:
+      tags: [Flags]
+      summary: Get flag categories
+      operationId: GetFlagCategories
+      parameters:
+        - name: If-None-Match
+          in: header
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Category list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FlagCategory'
+        '304':
+          description: Not Modified
+
+  /api/mobile/client/leaderboard:
+    get:
+      tags: [Leaderboard]
+      summary: Leaderboard
+      operationId: GetLeaderboard
+      parameters:
+        - name: fromdate
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - name: todate
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - name: limit
+          in: query
+          schema:
+            type: integer
+        - name: If-None-Match
+          in: header
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Leaderboard entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LeaderboardEntry'
+        '304':
+          description: Not Modified
+
+  /api/mobile/client/leaderboard/me:
+    get:
+      tags: [Leaderboard]
+      summary: Current user leaderboard entry
+      operationId: GetMyLeaderboard
+      parameters:
+        - name: fromdate
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - name: todate
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - name: If-None-Match
+          in: header
+          schema:
+            type: string
+      responses:
+        '200':
+          description: User leaderboard
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LeaderboardEntry'
+        '304':
+          description: Not Modified
+
+  /api/mobile/client/avatar/{id}:
+    get:
+      tags: [User]
+      summary: Get avatar (redirect)
+      operationId: GetAvatar
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Avatar image
+        '302':
+          description: Redirect to image
+
+components:
+
+  schemas:
+
+    BaseAppRequest:
+      type: object
+      required:
+        - private_key
+      properties:
+        private_key:
+          type: string
+      additionalProperties: true
+
+    LoginRequest:
+      allOf:
+        - $ref: '#/components/schemas/BaseAppRequest'
+        - type: object
+          required:
+            - email
+            - password
+          properties:
+            email:
+              type: string
+              format: email
+            password:
+              type: string
+
+    SignupRequest:
+      allOf:
+        - $ref: '#/components/schemas/BaseAppRequest'
+        - type: object
+          required:
+            - email
+            - name
+            - lastname
+            - password
+            - locale
+          properties:
+            email:
+              type: string
+              format: email
+            name:
+              type: string
+            lastname:
+              type: string
+            password:
+              type: string
+            locale:
+              type: string
+
+    SignupEmailConfirmRequest:
+      allOf:
+        - $ref: '#/components/schemas/BaseAppRequest'
+        - type: object
+          required:
+            - email
+            - code
+          properties:
+            email:
+              type: string
+              format: email
+            code:
+              type: string
+              pattern: '^[0-9]{6}$'
+
+    UpdateDeviceRequest:
+      allOf:
+        - $ref: '#/components/schemas/BaseAppRequest'
+        - type: object
+          required:
+            - device_id
+            - device_type
+          properties:
+            device_id:
+              type: string
+            device_type:
+              type: string
+              enum: [android, ios]
+
+    FlagsSearchRequest:
+      allOf:
+        - $ref: '#/components/schemas/BaseAppRequest'
+        - type: object
+          properties:
+            bounds:
+              $ref: '#/components/schemas/GeoBounds'
+            limit:
+              type: integer
+              minimum: 1
+              maximum: 50
+
+    LikeFlagRequest:
+      allOf:
+        - $ref: '#/components/schemas/BaseAppRequest'
+        - type: object
+          required:
+            - flag_id
+          properties:
+            flag_id:
+              type: integer
+
+    GeoPoint:
+      type: object
+      required:
+        - latitude
+        - longitude
+      properties:
+        latitude:
+          type: number
+          format: double
+          minimum: -90
+          maximum: 90
+        longitude:
+          type: number
+          format: double
+          minimum: -180
+          maximum: 180
+
+    GeoBounds:
+      type: object
+      required:
+        - northEast
+        - southWest
+      properties:
+        northEast:
+          $ref: '#/components/schemas/GeoPoint'
+        southWest:
+          $ref: '#/components/schemas/GeoPoint'
+
+    LoginResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        user_token:
+          type: string
+        user:
+          $ref: '#/components/schemas/User'
+      additionalProperties: true
+
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        email:
+          type: string
+        name:
+          type: string
+        lastname:
+          type: string
+        locale:
+          type: string
+        avatar:
+          type: string
+          nullable: true
+        points:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+      additionalProperties: true
+
+    OrgDetails:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+      additionalProperties: true
+
+    Flag:
+      type: object
+      properties:
+        id:
+          type: integer
+        category_id:
+          type: integer
+        description:
+          type: string
+        latitude:
+          type: number
+          format: double
+          minimum: -90
+          maximum: 90
+        longitude:
+          type: number
+          format: double
+          minimum: -180
+          maximum: 180
+        image_url:
+          type: string
+        likes:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+        user:
+          $ref: '#/components/schemas/User'
+      additionalProperties: true
+
+    FlagCategory:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        icon:
+          type: string
+      additionalProperties: true
+
+    LeaderboardEntry:
+      type: object
+      properties:
+        user:
+          $ref: '#/components/schemas/User'
+        points:
+          type: integer
+        rank:
+          type: integer
+      additionalProperties: true
