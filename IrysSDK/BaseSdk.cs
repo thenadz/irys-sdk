@@ -1,8 +1,12 @@
 ﻿namespace IrysSDK;
 
+using System;
+using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
+using System.Threading;
+using System.Threading.Tasks;
 
 public class BaseSdk : InternalBaseSdk
 {
@@ -54,7 +58,13 @@ public partial class InternalBaseSdk : IDisposable
   }
 
   // store session from login for all authenticated requests
-  protected string? UserPrivateKey { get; set; }
+  // NOTE: Generally the SDK will populate for you, but in test harness and other
+  // instances it can be manually populated to avoid needing login call if you already
+  // have a valid session token
+  public string? UserPrivateKey { get; set; }
+
+  // helper to check if we have a session token (not a guarantee of validity, but better than nothing)
+  public bool IsLoggedIn => !string.IsNullOrWhiteSpace(UserPrivateKey);
 
   private static HttpClient BuildHttpClient()
   {

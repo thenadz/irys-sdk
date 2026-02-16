@@ -175,6 +175,7 @@ paths:
     post:
       tags: [Flags]
       summary: Search flags
+      description: Search for flags with optional geographic filtering. Use the bounds object with lat, long, and radius to search within a geographic area.
       operationId: SearchFlags
       requestBody:
         required: true
@@ -182,15 +183,28 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/FlagsSearchRequest'
+            examples:
+              geographic_search:
+                summary: Search flags within a geographic area
+                value:
+                  bounds:
+                    lat: 29.425
+                    long: -98.475
+                    radius: 5000
+                  limit: 200
+                  status: [0, 1]
+              status_filter:
+                summary: Search open flags only
+                value:
+                  status: [0]
+                  limit: 50
       responses:
         '200':
-          description: Flags
+          description: Flags search response
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Flag'
+                $ref: '#/components/schemas/FlagsSearchResponse'
 
   /api/mobile/client/flags/like:
     post:
@@ -223,9 +237,7 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/FlagCategory'
+                $ref: '#/components/schemas/FlagCategoriesResponse'
         '304':
           description: Not Modified
 
@@ -318,6 +330,277 @@ paths:
         '302':
           description: Redirect to image
 
+  /api/mobile/client/{userId}/flags:
+    get:
+      tags: [Flags]
+      summary: Get user's flags
+      operationId: GetUserFlags
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: likes
+          in: query
+          schema:
+            type: boolean
+        - name: limit
+          in: query
+          schema:
+            type: integer
+        - name: hidepriv
+          in: query
+          schema:
+            type: boolean
+        - name: lagansourcetype
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: User's flags
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Flag'
+        '304':
+          description: Not Modified
+
+  /api/mobile/client/{userId}/stats/totals:
+    get:
+      tags: [User]
+      summary: Get user statistics totals (cached endpoint returns 304 Not Modified)
+      operationId: GetUserStatsTotals
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: hidepriv
+          in: query
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: User statistics (JSON response body)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserStatsTotalsResponse'
+        '304':
+          description: Not Modified (no response body, use cached data)
+
+  /api/mobile/client/{userId}/followers:
+    get:
+      tags: [User]
+      summary: Get user's followers
+      operationId: GetUserFollowers
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: Followers list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserListResponse'
+
+  /api/mobile/client/{userId}/following:
+    get:
+      tags: [User]
+      summary: Get user's following list
+      operationId: GetUserFollowing
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+      responses:
+        '200':
+          description: Following list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserListResponse'
+
+  /api/mobile/client/{userId}/follows/{otherId}:
+    get:
+      tags: [User]
+      summary: Check if following user
+      operationId: CheckFollows
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: otherId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Follow status
+
+  /api/mobile/client/levels:
+    get:
+      tags: [Gamification]
+      summary: Get level definitions (cached endpoint returns 304 Not Modified)
+      operationId: GetLevels
+      parameters:
+        - name: If-None-Match
+          in: header
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Level definitions (JSON response body)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LevelsResponse'
+        '304':
+          description: Not Modified (no response body, use cached data)
+
+  /api/mobile/client/notifications:
+    get:
+      tags: [Notifications]
+      summary: Get user notifications
+      operationId: GetNotifications
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: before
+          in: query
+          schema:
+            type: string
+        - name: after
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Notifications list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationsResponse'
+
+  /api/mobile/client/flags/categories/{categoryId}/subcategories:
+    get:
+      tags: [Flags]
+      summary: Get flag subcategories for category (cached endpoint returns 304 Not Modified)
+      operationId: GetSubcategories
+      parameters:
+        - name: categoryId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: If-None-Match
+          in: header
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Subcategory list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubcategoriesResponse'
+        '304':
+          description: Not Modified
+
+  /api/mobile/client/flags/details/{flagId}:
+    get:
+      tags: [Flags]
+      summary: Get detailed flag information
+      operationId: GetFlagDetails
+      parameters:
+        - name: flagId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Flag details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Flag'
+
+  /api/mobile/client/geocode/address:
+    post:
+      tags: [Geocoding]
+      summary: Reverse geocode coordinates to address
+      operationId: GeocodeAddress
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GeocodeAddressRequest'
+      responses:
+        '200':
+          description: Reverse geocoded address
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GeocodeAddressResponse'
+
+  /api/mobile/client/gis/parse:
+    post:
+      tags: [GIS]
+      summary: Parse and validate GIS data
+      operationId: ParseGIS
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GISParseRequest'
+      responses:
+        '200':
+          description: GIS data parsed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GISParseResponse'
+
 components:
 
   schemas:
@@ -401,51 +684,139 @@ components:
       allOf:
         - $ref: '#/components/schemas/BaseAppRequest'
         - type: object
+          description: Request to search for flags. To perform geographic searches, include the bounds object with center latitude/longitude and search radius in meters.
           properties:
             bounds:
-              $ref: '#/components/schemas/GeoBounds'
+              type: object
+              nullable: true
+              description: Geographic search using center point and radius. All flags within radius meters of the center point will be returned.
+              properties:
+                lat:
+                  type: number
+                  format: double
+                  minimum: -90
+                  maximum: 90
+                  description: Center latitude for geographic search
+                long:
+                  type: number
+                  format: double
+                  minimum: -180
+                  maximum: 180
+                  description: Center longitude for geographic search
+                radius:
+                  type: integer
+                  minimum: 1
+                  description: Search radius in meters
+              additionalProperties: true
             limit:
               type: integer
               minimum: 1
-              maximum: 50
+              maximum: 200
+              nullable: true
+              description: Maximum number of flags to return. API caps results at 200 flags regardless of higher limit values.
+            status:
+              type: array
+              items:
+                type: integer
+              nullable: true
+            likes:
+              type: boolean
+              nullable: true
+            lat:
+              type: number
+              format: double
+              minimum: -90
+              maximum: 90
+              nullable: true
+            long:
+              type: number
+              format: double
+              minimum: -180
+              maximum: 180
+              nullable: true
+            greaterthanid:
+              type: integer
+              nullable: true
+            lowerthanid:
+              type: integer
+              nullable: true
+            friends:
+              type: integer
+              nullable: true
+            categoryid:
+              type: integer
+              nullable: true
+            subcategoryid:
+              type: integer
+              nullable: true
+            objextraprops:
+              type: object
+              additionalProperties: true
+              nullable: true
+            checkblocked:
+              type: boolean
+              nullable: true
+            last_update:
+              type: string
+              format: date-time
+              nullable: true
+            fromdate:
+              type: string
+              format: date-time
+              nullable: true
+            todate:
+              type: string
+              format: date-time
+              nullable: true
+
+    FlagsSearchResponse:
+      type: object
+      properties:
+        result:
+          type: integer
+        msg:
+          type: string
+        flags:
+          type: array
+          items:
+            $ref: '#/components/schemas/Flag'
+      additionalProperties: true
+
+    BaseListResponse:
+      type: object
+      description: Base response for paginated list endpoints
+      properties:
+        result:
+          type: integer
+          description: Result code
+        msg:
+          type: string
+          description: Message
+        err_code:
+          type: string
+          description: Error code
+      additionalProperties: true
+
+    FlagCategoriesResponse:
+      allOf:
+        - $ref: '#/components/schemas/BaseListResponse'
+        - type: object
+          properties:
+            categories:
+              type: array
+              items:
+                $ref: '#/components/schemas/FlagCategory'
+      additionalProperties: true
 
     LikeFlagRequest:
       allOf:
         - $ref: '#/components/schemas/BaseAppRequest'
         - type: object
           required:
-            - flag_id
+            - flagid
           properties:
-            flag_id:
-              type: integer
-
-    GeoPoint:
-      type: object
-      required:
-        - latitude
-        - longitude
-      properties:
-        latitude:
-          type: number
-          format: double
-          minimum: -90
-          maximum: 90
-        longitude:
-          type: number
-          format: double
-          minimum: -180
-          maximum: 180
-
-    GeoBounds:
-      type: object
-      required:
-        - northEast
-        - southWest
-      properties:
-        northEast:
-          $ref: '#/components/schemas/GeoPoint'
-        southWest:
-          $ref: '#/components/schemas/GeoPoint'
+            flagid:
+              type: string
 
     LoginResponse:
       type: object
@@ -463,6 +834,8 @@ components:
       properties:
         id:
           type: integer
+          minimum: 1
+          description: User ID (always positive)
         email:
           type: string
         name:
@@ -476,6 +849,8 @@ components:
           nullable: true
         points:
           type: integer
+          minimum: 0
+          description: User points accumulated
         created_at:
           type: string
           format: date-time
@@ -498,31 +873,387 @@ components:
     Flag:
       type: object
       properties:
-        id:
+        _id:
+          type: string
+          description: MongoDB object ID
+        location:
+          $ref: '#/components/schemas/GeoLocation'
+        lagan_details:
+          $ref: '#/components/schemas/LaganDetails'
+        folio:
           type: integer
-        category_id:
+          minimum: 1
+          description: Folio number (always positive)
+        organization_id:
           type: integer
+          minimum: 1
+          description: Organization ID (always positive)
+        user_added_type:
+          type: string
+        client_added_id:
+          type: integer
+          minimum: 1
+          description: Client ID who added flag (always positive)
+        client_added_name:
+          type: string
+        client_added_lastname:
+          type: string
+        flag_category_id:
+          type: integer
+          minimum: 1
+          description: Category ID (always positive)
+        flag_category_name:
+          type: string
+        flag_subcategory_id:
+          type: integer
+          minimum: 1
+          description: Subcategory ID (always positive)
+        flag_subcategory_name:
+          type: string
         description:
           type: string
-        latitude:
-          type: number
-          format: double
-          minimum: -90
-          maximum: 90
-        longitude:
-          type: number
-          format: double
-          minimum: -180
-          maximum: 180
-        image_url:
+        location_address:
           type: string
-        likes:
+        location_address_general:
+          type: string
+        location_geocode:
+          $ref: '#/components/schemas/LocationGeocodeDetails'
+        files_open:
+          type: array
+          items:
+            $ref: '#/components/schemas/FileInfo'
+        files_close:
+          type: array
+          items:
+            $ref: '#/components/schemas/FileInfo'
+        priority:
           type: integer
-        created_at:
+          minimum: 0
+          description: Flag priority level
+        status:
+          type: integer
+          minimum: 0
+          maximum: 3
+          description: Flag status (0=open, 1=in progress, 2=resolved, 3=closed)
+        like_user_count:
+          type: integer
+          minimum: 0
+          description: Number of user likes
+        dislike_user_count:
+          type: integer
+          minimum: 0
+          description: Number of user dislikes
+        like_client_count:
+          type: integer
+          minimum: 0
+          description: Number of client likes
+        dislike_client_count:
+          type: integer
+          minimum: 0
+          description: Number of client dislikes
+        like_client_ids:
+          type: array
+          items:
+            type: integer
+            minimum: 1
+        like_user_ids:
+          type: array
+          items:
+            type: integer
+            minimum: 1
+        users_assigned_ids:
+          type: array
+          items:
+            type: integer
+            minimum: 1
+        labels_text:
+          type: array
+          items:
+            type: string
+        close_comment_id:
+          type: string
+          nullable: true
+        survey_answers:
+          type: array
+          items:
+            $ref: '#/components/schemas/SurveyAnswer'
+        old311Id:
+          type: string
+          nullable: true
+        migration:
+          type: boolean
+        date_created:
           type: string
           format: date-time
-        user:
-          $ref: '#/components/schemas/User'
+        users_assigned:
+          type: array
+          items:
+            type: object
+        date_closed:
+          type: string
+          format: date-time
+          nullable: true
+        __v:
+          type: integer
+          minimum: 0
+      additionalProperties: true
+
+    GeoLocation:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [Point]
+        coordinates:
+          type: array
+          items:
+            type: number
+          minItems: 2
+          maxItems: 2
+          description: "[longitude, latitude]"
+
+    LaganDetails:
+      type: object
+      properties:
+        source_type:
+          type: string
+        priv:
+          type: boolean
+        anonymous:
+          type: boolean
+        backup:
+          type: boolean
+        backup_error:
+          type: boolean
+        backup_error_count:
+          type: integer
+        backup_error_details:
+          type: string
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/LaganEvent'
+        tasks:
+          type: array
+          items:
+            $ref: '#/components/schemas/LaganTask'
+        notes:
+          type: array
+          items:
+            $ref: '#/components/schemas/LaganNote'
+        case_ref:
+          type: string
+        creation_date:
+          type: string
+          format: date-time
+        event_code_definition:
+          type: string
+        type_key:
+          type: string
+        type_name:
+          type: string
+        vof_code:
+          type: string
+        dueDate:
+          type: string
+          format: date-time
+        openDate:
+          type: string
+          format: date-time
+      additionalProperties: true
+
+    LaganEvent:
+      type: object
+      properties:
+        EventTitle:
+          type: string
+        Created:
+          type: string
+          format: date-time
+        HandledBy:
+          type: object
+          additionalProperties: true
+        CaseQueue:
+          type: string
+        AdditionalInfo:
+          type: string
+        _id:
+          type: string
+      additionalProperties: true
+
+    LaganTask:
+      type: object
+      properties:
+        TaskID:
+          type: string
+        Name:
+          type: string
+        Type:
+          type: string
+        Priority:
+          type: string
+        DueDate:
+          type: string
+          format: date-time
+        Status:
+          type: string
+        _id:
+          type: string
+      additionalProperties: true
+
+    LaganNote:
+      type: object
+      properties:
+        NoteID:
+          type: string
+        Text:
+          type: string
+        Created:
+          type: string
+          format: date-time
+        CreatedBy:
+          type: object
+          additionalProperties: true
+        NoteLabels:
+          type: object
+          additionalProperties: true
+        _id:
+          type: string
+      additionalProperties: true
+
+    LocationGeocodeDetails:
+      type: object
+      properties:
+        address_components:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        formatted_address:
+          type: string
+        geometry:
+          type: object
+          additionalProperties: true
+        place_id:
+          type: string
+        types:
+          type: array
+          items:
+            type: string
+      additionalProperties: true
+
+    FileInfo:
+      type: object
+      properties:
+        _id:
+          type: string
+        public:
+          type: integer
+        url:
+          type: string
+        unique_name:
+          type: string
+        orig_name:
+          type: string
+        extension:
+          type: string
+        mime_type:
+          type: string
+        file_size:
+          type: integer
+        img_thumb_url:
+          type: string
+        img_webp_url:
+          type: string
+        img_blurhash:
+          type: string
+        img_blur_dataurl:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        labels_text:
+          type: array
+          items:
+            type: string
+        labels:
+          type: array
+          items:
+            type: object
+        date_created:
+          type: string
+          format: date-time
+        __v:
+          type: integer
+      additionalProperties: true
+
+    SurveyAnswer:
+      type: object
+      properties:
+        survey_id:
+          type: integer
+          minimum: 1
+          description: Survey ID (always positive)
+        survey_title:
+          type: string
+        question_id:
+          type: integer
+          minimum: 1
+          description: Question ID (always positive)
+        question_order:
+          type: integer
+          minimum: 1
+          description: Question order (1-based)
+        question_title:
+          type: string
+        question_type:
+          type: string
+        question_hidden:
+          type: integer
+          minimum: 0
+          maximum: 1
+          description: Boolean flag (0 or 1)
+        question_laganVOFFieldCode:
+          type: string
+        answer_choice_id:
+          type: integer
+          minimum: 1
+          nullable: true
+          description: Choice ID if applicable (always positive)
+        answer_laganCode:
+          type: string
+        answer_laganVOFName:
+          type: string
+        answer_laganVOFFieldValue:
+          type: string
+        answer_laganTypeName:
+          type: string
+        answer_default:
+          type: integer
+          minimum: 0
+          maximum: 1
+          nullable: true
+          description: Boolean flag (0 or 1)
+        answer_text:
+          type: string
+          nullable: true
+        answer_date:
+          type: string
+          format: date-time
+          nullable: true
+        answer_signature:
+          type: string
+        answer_files:
+          type: array
+          items:
+            type: object
+        answer_mult_choice:
+          type: array
+          items:
+            type: object
+        _id:
+          type: string
       additionalProperties: true
 
     FlagCategory:
@@ -530,6 +1261,8 @@ components:
       properties:
         id:
           type: integer
+          minimum: 1
+          description: Category ID (always positive)
         name:
           type: string
         icon:
@@ -545,4 +1278,378 @@ components:
           type: integer
         rank:
           type: integer
+      additionalProperties: true
+
+    UserStatsTotals:
+      type: object
+      description: Totals for user statistics (nested within UserStatsTotalsResponse)
+      properties:
+        flags:
+          type: integer
+          minimum: 0
+          description: Number of flags submitted by user
+        followers:
+          type: integer
+          minimum: 0
+          description: Number of user followers
+        following:
+          type: integer
+          minimum: 0
+          description: Number of users this user is following
+        points:
+          type: integer
+          minimum: 0
+          description: User points earned
+      additionalProperties: true
+
+    UserStatsTotalsResponse:
+      type: object
+      description: User statistics totals response (cached endpoint)
+      properties:
+        result:
+          type: integer
+          description: Result code (1 = success)
+        totals:
+          $ref: '#/components/schemas/UserStatsTotals'
+      additionalProperties: true
+
+    UserListResponse:
+      type: object
+      description: Paginated list of users with count
+      properties:
+        users:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserBasic'
+        total_count:
+          type: integer
+          minimum: 0
+          description: Total count of users
+      additionalProperties: true
+
+    UserBasic:
+      type: object
+      properties:
+        user_id:
+          type: integer
+          minimum: 1
+          description: User ID (always positive)
+        name:
+          type: string
+        lastname:
+          type: string
+        points:
+          type: integer
+          minimum: 0
+          description: User points
+      additionalProperties: true
+
+    LevelsResponse:
+      allOf:
+        - $ref: '#/components/schemas/BaseListResponse'
+        - type: object
+          description: Level definitions response (cached endpoint)
+          properties:
+            levels:
+              type: array
+              items:
+                $ref: '#/components/schemas/Level'
+      additionalProperties: true
+
+    Level:
+      type: object
+      description: Gamification level badge definition
+      properties:
+        id:
+          type: integer
+          minimum: 1
+          description: Level ID (always positive)
+        badge_title:
+          type: string
+          description: Display name of badge (e.g., 'Volunteer', 'Canvasser')
+        points_earned:
+          type: integer
+          minimum: 0
+          description: Points required to reach this level
+        icon_url:
+          type: string
+          description: S3 URL to badge icon image
+      additionalProperties: true
+
+    NotificationsResponse:
+      allOf:
+        - $ref: '#/components/schemas/BaseListResponse'
+        - type: object
+          properties:
+            notifications:
+              type: array
+              items:
+                $ref: '#/components/schemas/Notification'
+      additionalProperties: true
+
+    Notification:
+      type: object
+      properties:
+        id:
+          type: integer
+          minimum: 1
+          description: Notification ID (always positive)
+        type:
+          type: string
+          enum: [points_earned, flag_liked, comment_added, user_followed]
+        objDetails:
+          type: object
+          additionalProperties: true
+        createdAt:
+          type: string
+          format: date-time
+      additionalProperties: true
+
+    SubcategoriesResponse:
+      allOf:
+        - $ref: '#/components/schemas/BaseListResponse'
+        - type: object
+          properties:
+            subcategories:
+              type: array
+              items:
+                $ref: '#/components/schemas/FlagSubcategory'
+      additionalProperties: true
+
+    FlagSubcategory:
+      type: object
+      description: Flag subcategory with full structure from actual HAR response
+      properties:
+        id:
+          type: integer
+          minimum: 1
+          description: Subcategory ID (always positive)
+        name:
+          type: string
+        description:
+          type: string
+        order:
+          type: integer
+          minimum: 1
+          description: Display order (1-based)
+        laganEventCode:
+          type: string
+        laganVOFName:
+          type: string
+        laganVOFFieldCode:
+          type: string
+        laganVOFFieldValue:
+          type: string
+        laganTypeName:
+          type: string
+        laganLocationTypes:
+          type: string
+        laganTypeKey:
+          type: string
+        surveys_id:
+          type: integer
+          minimum: 1
+          description: Survey ID (always positive)
+        hidden:
+          type: integer
+          minimum: 0
+          maximum: 1
+          description: Boolean flag (0 or 1)
+        sla:
+          type: integer
+          minimum: 0
+          description: SLA flag (0 = no SLA)
+        sla_days:
+          type: integer
+          minimum: 0
+          description: SLA days
+        sla_hours:
+          type: integer
+          minimum: 0
+          description: SLA hours
+        sla_minutes:
+          type: integer
+          minimum: 0
+          description: SLA minutes
+        survey_title:
+          type: string
+        survey:
+          $ref: '#/components/schemas/SubcategorySurvey'
+        teams:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+      additionalProperties: true
+
+    SubcategorySurvey:
+      type: object
+      description: Survey object nested within subcategory (from HAR)
+      properties:
+        id:
+          type: integer
+        createdAt:
+          type: string
+        title:
+          type: string
+        expires:
+          type: string
+        date_start:
+          type: string
+        date_end:
+          type: string
+        questions:
+          type: array
+          items:
+            $ref: '#/components/schemas/SurveyQuestion'
+        questionsobj:
+          type: object
+          additionalProperties: true
+      additionalProperties: true
+
+    SurveyQuestion:
+      type: object
+      description: Question within a survey (from HAR)
+      properties:
+        id:
+          type: integer
+          minimum: 1
+          description: Question ID (always positive)
+        title:
+          type: string
+        description:
+          type: string
+        type:
+          type: string
+        multiple:
+          type: boolean
+        order:
+          type: integer
+          minimum: 1
+          description: Question order (1-based)
+        hidden:
+          type: integer
+          minimum: 0
+          maximum: 1
+          description: Boolean flag (0 or 1)
+        req:
+          type: integer
+          minimum: 0
+          maximum: 1
+          description: Required flag (0 or 1)
+        uniq:
+          type: integer
+          minimum: 0
+          maximum: 1
+          description: Unique flag (0 or 1)
+        pattern:
+          type: string
+        min_length:
+          type: integer
+          minimum: 0
+          description: Minimum string length
+        max_length:
+          type: integer
+          minimum: 0
+          description: Maximum string length
+        date_min:
+          type: string
+        date_max:
+          type: string
+        file_types:
+          type: string
+        placeholder:
+          type: string
+        question_phone_prefix:
+          type: string
+        laganVOFFieldCode:
+          type: string
+        choices:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+      additionalProperties: true
+
+    GeocodeAddressRequest:
+      allOf:
+        - $ref: '#/components/schemas/BaseAppRequest'
+        - type: object
+          required:
+            - lat
+            - lng
+          properties:
+            lat:
+              type: number
+              format: double
+              description: Latitude coordinate
+            lng:
+              type: number
+              format: double
+              description: "Longitude coordinate (reverse geocoding: coordinates to address string)"
+            lang:
+              type: string
+              default: en
+              description: Language code
+
+    GeocodeAddressResponse:
+      type: string
+      description: The formatted address string from reverse geocoding
+
+    GISParseRequest:
+      allOf:
+        - $ref: '#/components/schemas/BaseAppRequest'
+        - type: object
+          required:
+            - lat
+            - long
+          properties:
+            lat:
+              type: number
+              format: double
+              description: Latitude coordinate
+            long:
+              type: number
+              format: double
+              description: "Longitude coordinate (note: field is 'long' not 'lng')"
+            address:
+              type: string
+              description: Street address
+            laganTypeKey:
+              type: string
+              description: Flag category/type key
+
+    GISParseResponse:
+      type: object
+      properties:
+        result:
+          type: integer
+        msg:
+          type: string
+        location:
+          type: object
+          description: GIS coordinate transformation result
+          properties:
+            x:
+              type: string
+              description: X coordinate (State Plane coordinate system)
+            y:
+              type: string
+              description: Y coordinate (State Plane coordinate system)
+        laganTypeKey:
+          type: string
+          nullable: true
+        location_attributes:
+          type: object
+          description: GIS location attributes (dynamic properties)
+          additionalProperties: true
+        geometry:
+          type: object
+          description: Geometry information
+          additionalProperties: true
+        err_code:
+          type: string
+        locationType:
+          type: string
+          description: Type of location (Street, Parcel, Address, etc.)
       additionalProperties: true
