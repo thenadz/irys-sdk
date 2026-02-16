@@ -5,6 +5,8 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IrysSDK", "IrysSDK\IrysSDK.csproj", "{19EF3E14-66FD-4BCA-BC92-E37CE8975547}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IrysSDK.Tests", "IrysSDK.Tests\IrysSDK.Tests.csproj", "{A2B3C4D5-E6F7-4A8B-9C0D-1E2F3A4B5C6D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,5 +17,9 @@ Global
 		{19EF3E14-66FD-4BCA-BC92-E37CE8975547}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{19EF3E14-66FD-4BCA-BC92-E37CE8975547}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{19EF3E14-66FD-4BCA-BC92-E37CE8975547}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A2B3C4D5-E6F7-4A8B-9C0D-1E2F3A4B5C6D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A2B3C4D5-E6F7-4A8B-9C0D-1E2F3A4B5C6D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A2B3C4D5-E6F7-4A8B-9C0D-1E2F3A4B5C6D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A2B3C4D5-E6F7-4A8B-9C0D-1E2F3A4B5C6D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

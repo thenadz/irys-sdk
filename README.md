@@ -33,9 +33,9 @@ Returned from `LoginResponse.user_token`.
 After login, SDK:
 - Stores `user_token`
 - Sends it as header: `authuser`
-- Clears it after logout
+- Clears it when a new login occurs
 
-All of this is handled automaticly in the middleware.
+All of this is handled automatically in the middleware.
 
 ------------------------------------------------------------------------
 
@@ -78,9 +78,37 @@ Geographic search uses a center point with radius:
 var results = await sdk.SearchFlagsAsync(new FlagsSearchRequest
 {
     Bounds = new { lat = 29.4239, long = -98.4936, radius = 5000 },
-    Limit = 200,
-    Status = new[] { 0, 1 }  // 0 = open, 1 = closed
+    Limit = 10,
+    Status = new[] { 0, 1 }  // 0 = open, 1 = pending
 });
+```
+
+**Pagination:**
+The search endpoint uses **cursor-based pagination** with MongoDB ObjectID cursors in backward direction (newest to oldest):
+- Start with first request (no cursor)
+- Extract the `_id` of the **last flag** from the response
+- Pass it as `lowerthanid` in the next request to get the next page
+- Continue until fewer results returned than requested limit (indicates end)
+
+```csharp
+var page1 = await sdk.SearchFlagsAsync(new FlagsSearchRequest
+{
+    Bounds = new { lat = 29.4239, long = -98.4936, radius = 5000 },
+    Limit = 10,
+    Status = new[] { 0, 1 }
+});
+
+if (page1.Flags?.Count > 0)
+{
+    var lastFlagId = page1.Flags[page1.Flags.Count - 1]._id;
+    var page2 = await sdk.SearchFlagsAsync(new FlagsSearchRequest
+    {
+        Bounds = new { lat = 29.4239, long = -98.4936, radius = 5000 },
+        Limit = 10,
+        Status = new[] { 0, 1 },
+        Lowerthanid = lastFlagId  // Use previous last flag ID as cursor
+    });
+}
 ```
 
 **Geographic Search Details:**
@@ -88,9 +116,60 @@ var results = await sdk.SearchFlagsAsync(new FlagsSearchRequest
 - `long`: Center longitude (-180 to 180)  
 - `radius`: Search radius in meters (all flags within radius returned)
 - `limit`: Maximum results (1-200; API caps at 200 regardless)
-- `status`: Array of status codes to filter (0=open, 1=closed)
+- `status`: Array of status codes to filter (0=open, 1=pending, 2=closed)
 - `categoryid`: Optional category filter
 - `subcategoryid`: Optional subcategory filter
+- `checkblocked`: When true, excludes blocked flags
+- `likes`: When true, only returns flags the user has liked
+- `objextraprops`: Advanced nested property filtering (see below)
+
+### Advanced Filtering with objextraprops
+
+The `objextraprops` parameter enables complex filtering on nested Flag object properties using dot-notation. This is useful for filtering on internal lagan system data without exposing all public filters.
+
+**Exclude Private Flags:**
+``` csharp
+var results = await sdk.SearchFlagsAsync(new FlagsSearchRequest
+{
+    Bounds = new { lat = 29.4239, long = -98.4936, radius = 5000 },
+    Limit = 10,
+    Status = new[] { 0, 1 },
+    Objextraprops = new Dictionary<string, object>
+    {
+        { "lagan_details.priv", false }  // Exclude private flags
+    }
+});
+```
+
+**Multiple Nested Filters:**
+``` csharp
+var results = await sdk.SearchFlagsAsync(new FlagsSearchRequest
+{
+    Status = new[] { 0, 1 },
+    Limit = 20,
+    Objextraprops = new Dictionary<string, object>
+    {
+        { "lagan_details.priv", false },      // Exclude private flags
+        { "lagan_details.backup", false },    // Exclude backup/synced flags
+        { "migration", false }                 // Exclude migrated flags
+    }
+});
+```
+
+**Supported Nested Properties:**
+- `lagan_details.priv` (boolean) - Exclude/include private flags
+- `lagan_details.backup` (boolean) - Backup/sync flag status
+- `lagan_details.anonymous` (boolean) - Anonymous submission status
+- `lagan_details.source_type` (string) - Data source filtering
+- `migration` (boolean) - Legacy migration status
+- Any other nested fields on Flag object (string, number, boolean)
+
+**Filter Combination Rules:**
+1. Multiple `objextraprops` filters are combined with AND logic
+2. `objextraprops` combines with other filters (`status`, `categoryid`, `likes`, etc.)
+3. Use appropriate data types: boolean fields use `true`/`false`, strings use quoted values
+4. Filters are applied server-side after geographic/status filtering
+5. Does not affect pagination cursors
 
 ## Like Flag
 
@@ -114,12 +193,6 @@ var leaderboard = await sdk.GetLeaderboardAsync(
 
 Date format: ISO 8601 date-time.
 
-## Logout
-
-``` csharp
-await sdk.LogoutAsync(new BaseAppRequest());
-```
-
 ------------------------------------------------------------------------
 
 # Endpoint Summary
@@ -127,7 +200,6 @@ await sdk.LogoutAsync(new BaseAppRequest());
 ## Auth
 
 POST /login\
-POST /logout\
 POST /signup\
 POST /signup/email/confirmcode
 
@@ -264,6 +336,43 @@ var gis = await sdk.ParseGISAsync(new GISParseRequest
 });
 // Returns: { result: 0, msg: "", location: {x: string, y: string}, location_attributes: {...}, geometry: {...}, locationType: "...", err_code: "" }
 ```
+
+------------------------------------------------------------------------
+
+# Testing
+
+The SDK includes a comprehensive xUnit test suite covering authentication, user APIs, surveys, gamification, notifications, and geocoding endpoints.
+
+## Quick Start
+
+1. **Setup local credentials:**
+   ```powershell
+   Copy-Item .env.example .env.local
+   # Edit .env.local with your test credentials
+   ```
+
+2. **Run tests:**
+   ```powershell
+   dotnet test
+   ```
+
+Credentials are automatically loaded from `.env.local` when tests start.
+
+## CI/CD Setup
+
+Tests automatically run in GitHub Actions when you:
+
+1. Add secrets to your repository:
+   - `IRYS_TEST_EMAIL`: Your test account email
+   - `IRYS_TEST_PASSWORD`: Your test account password
+
+2. Push to `main` or `develop` branch (or open a pull request)
+
+GitHub Actions automatically runs the test suite with your credentials injected from repository secrets.
+
+## Documentation
+
+For detailed testing setup, architecture, and troubleshooting, see [TESTING.md](TESTING.md).
 
 ------------------------------------------------------------------------
 

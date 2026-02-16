@@ -26,3 +26,6 @@ jobs:
       run: dotnet build --no-restore
     - name: Test
       run: dotnet test --no-build --verbosity normal
+      env:
+        IRYS_TEST_EMAIL: ${{ secrets.IRYS_TEST_EMAIL }}
+        IRYS_TEST_PASSWORD: ${{ secrets.IRYS_TEST_PASSWORD }}

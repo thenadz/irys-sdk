@@ -27,21 +27,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/LoginResponse'
 
-  /api/mobile/client/logout:
-    post:
-      tags: [Auth]
-      summary: Logout current user
-      operationId: Logout
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/BaseAppRequest'
-      responses:
-        '200':
-          description: Logout successful
-
   /api/mobile/client/signup:
     post:
       tags: [Auth]
@@ -684,7 +669,7 @@ components:
       allOf:
         - $ref: '#/components/schemas/BaseAppRequest'
         - type: object
-          description: Request to search for flags. To perform geographic searches, include the bounds object with center latitude/longitude and search radius in meters.
+          description: Request to search for flags. Supports geographic search (bounds), status filtering, pagination via ID cursors (backward direction), and nested property filtering.
           properties:
             bounds:
               type: object
@@ -718,56 +703,69 @@ components:
               type: array
               items:
                 type: integer
+                minimum: 0
+                maximum: 3
               nullable: true
+              description: Flag status codes to include in results. 0=Open, 1=Pending, 2=Closed, 3=Other. Array allows multiple statuses in single query (e.g., [0,1] for open/pending only).
             likes:
               type: boolean
               nullable: true
+              description: When true, only returns flags the current user has liked
+            checkblocked:
+              type: boolean
+              nullable: true
+              description: When true, excludes blocked flags; when false or null, includes all flags
+            friends:
+              type: integer
+              nullable: true
+              description: Friend filtering mode (1=friend filter enabled, null=no friend filtering)
             lat:
               type: number
               format: double
               minimum: -90
               maximum: 90
               nullable: true
+              description: User's latitude (used with search filtering, not required for bounds-based search)
             long:
               type: number
               format: double
               minimum: -180
               maximum: 180
               nullable: true
-            greaterthanid:
-              type: integer
-              nullable: true
+              description: User's longitude (used with search filtering, not required for bounds-based search)
             lowerthanid:
-              type: integer
+              type: string
               nullable: true
-            friends:
-              type: integer
+              description: MongoDB ObjectID cursor for backward pagination (newest to oldest). Set to the _id of the last flag from previous request to get next page.
+            greaterthanid:
+              type: string
               nullable: true
+              description: MongoDB ObjectID cursor for forward pagination (oldest to newest)
             categoryid:
               type: integer
               nullable: true
+              description: Filter by flag category ID
             subcategoryid:
               type: integer
               nullable: true
+              description: Filter by flag subcategory ID
             objextraprops:
-              type: object
-              additionalProperties: true
-              nullable: true
-            checkblocked:
-              type: boolean
-              nullable: true
+              $ref: '#/components/schemas/FlagsSearchObjExtraProps'
             last_update:
               type: string
               format: date-time
               nullable: true
+              description: Filter flags by last update timestamp
             fromdate:
               type: string
               format: date-time
               nullable: true
+              description: Filter flags created after this date
             todate:
               type: string
               format: date-time
               nullable: true
+              description: Filter flags created before this date
 
     FlagsSearchResponse:
       type: object
@@ -1449,7 +1447,7 @@ components:
         surveys_id:
           type: integer
           minimum: 1
-          description: Survey ID (always positive)
+          description: Survey ID associated with this subcategory (always present when survey exists)
         hidden:
           type: integer
           minimum: 0
@@ -1490,14 +1488,24 @@ components:
           type: integer
         createdAt:
           type: string
+          format: date-time
         title:
           type: string
         expires:
-          type: string
+          type: integer
+          format: int64
+          minimum: 0
+          description: Unix timestamp in milliseconds when survey expires (0 means never expires)
         date_start:
           type: string
+          format: date-time
+          nullable: true
+          description: Survey start date in ISO 8601 format (e.g., '2022-09-15T21:02:35.000Z'), null when not specified
         date_end:
           type: string
+          format: date-time
+          nullable: true
+          description: Survey end date in ISO 8601 format (e.g., '2022-09-15T21:02:35.000Z'), null when not specified
         questions:
           type: array
           items:
@@ -1523,6 +1531,7 @@ components:
           type: string
         multiple:
           type: boolean
+          nullable: true
         order:
           type: integer
           minimum: 1
@@ -1547,10 +1556,12 @@ components:
         min_length:
           type: integer
           minimum: 0
+          nullable: true
           description: Minimum string length
         max_length:
           type: integer
           minimum: 0
+          nullable: true
           description: Maximum string length
         date_min:
           type: string
@@ -1653,3 +1664,32 @@ components:
           type: string
           description: Type of location (Street, Parcel, Address, etc.)
       additionalProperties: true
+
+    FlagsSearchObjExtraProps:
+      type: object
+      nullable: true
+      description: Advanced nested property filtering for Flag objects using dot-notation syntax. Filters are combined with AND logic across all properties and combined with other search filters (status, categoryid, likes, checkblocked). Server applies filters after geographic/status/category filtering but does not affect pagination cursors.
+      properties:
+        lagan_details.priv:
+          type: boolean
+          description: Filter by privacy status (false excludes private flags). Used in all verified searches.
+        lagan_details.backup:
+          type: boolean
+          description: Filter by backup/sync status (false excludes backup flags)
+        lagan_details.anonymous:
+          type: boolean
+          description: Filter by anonymous submission status
+        lagan_details.source_type:
+          type: string
+          description: Filter by data source (e.g., "app", "web", "import")
+        migration:
+          type: boolean
+          description: Filter by legacy migration status (false excludes migrated flags)
+      additionalProperties:
+        oneOf:
+          - type: boolean
+          - type: string
+          - type: integer
+          - type: number
+      example:
+        lagan_details.priv: false

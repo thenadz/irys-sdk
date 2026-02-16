@@ -27,14 +27,7 @@ public class BaseSdk : InternalBaseSdk
     return resp;
   }
 
-  public override async Task LogoutAsync(BaseAppRequest body, CancellationToken cancellationToken)
-  {
-    // do logout
-    await base.LogoutAsync(body, cancellationToken);
 
-    // If we got here, logout succeeded (base throws on non-200)
-    UserPrivateKey = null;
-  }
 }
 
 public partial class InternalBaseSdk : IDisposable
