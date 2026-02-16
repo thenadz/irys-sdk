@@ -1,5 +1,9 @@
 # Irys Mobile Client SDK
 
+[![Tests](https://github.com/thenadz/irys-sdk/actions/workflows/dotnet.yml/badge.svg)](https://github.com/thenadz/irys-sdk/actions/workflows/dotnet.yml)
+[![.NET 8.0](https://img.shields.io/badge/.NET-8.0-512BD4)](https://dotnet.microsoft.com/en-us/download/dotnet/8.0)
+[![License: Unlicense](https://img.shields.io/badge/License-Unlicense-blue.svg)](https://unlicense.org/)
+
 Unofficial .NET SDK for the Irys Mobile Client API, as used by the [311SA mobile app](https://www.sa.gov/Directory/Departments/311/Services/App).
 
 Base URL:
