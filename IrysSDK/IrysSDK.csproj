@@ -19,7 +19,7 @@
   </ItemGroup>
 
   <Target Name="NSwag" BeforeTargets="BeforeBuild">
-    <Exec WorkingDirectory="$(ProjectDir)" Command="$(NSwagExe_Net80) openapi2csclient /input:openapi.yml /output:BaseSdk.gen.cs /className:InternalBaseSdk /namespace:IrysSDK /JsonLibrary:SystemTextJson" />
+    <Exec WorkingDirectory="$(ProjectDir)" Command="$(NSwagExe_Net80) run nswag.json" />
   </Target>
 
 </Project>
